@@ -1,4 +1,4 @@
-module github.com/hashicorp/terraform-provider-scaffolding-framework
+module github.com/uptycslabs/terraform-provider-uptycscspm
 
 go 1.17
 
