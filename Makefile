@@ -3,7 +3,7 @@ HOSTNAME=github.com
 NAMESPACE=uptycslabs
 NAME=uptycscspm
 BINARY=terraform-provider-${NAME}
-VERSION=0.0.3
+VERSION=0.0.1
 OS_ARCH=darwin_amd64
 
 default: install
@@ -12,6 +12,7 @@ build:
 	go build -o ${BINARY}
 
 release:
+	mkdir -p ./bin
 	GOOS=darwin GOARCH=amd64 go build -o ./bin/${BINARY}_${VERSION}_darwin_amd64
 	GOOS=freebsd GOARCH=386 go build -o ./bin/${BINARY}_${VERSION}_freebsd_386
 	GOOS=freebsd GOARCH=amd64 go build -o ./bin/${BINARY}_${VERSION}_freebsd_amd64
