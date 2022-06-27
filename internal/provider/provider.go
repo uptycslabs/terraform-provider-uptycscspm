@@ -6,7 +6,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
@@ -35,7 +34,6 @@ type provider struct {
 
 // providerData can be used to store data from the Terraform configuration.
 type providerData struct {
-	Profile types.String `tfsdk:"profile"`
 }
 
 func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderRequest, resp *tfsdk.ConfigureProviderResponse) {
@@ -68,13 +66,7 @@ func (p *provider) GetDataSources(ctx context.Context) (map[string]tfsdk.DataSou
 
 func (p *provider) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"profile": {
-				MarkdownDescription: "Profile Name",
-				Required:            true,
-				Type:                types.StringType,
-			},
-		},
+		Attributes: map[string]tfsdk.Attribute{},
 	}, nil
 }
 

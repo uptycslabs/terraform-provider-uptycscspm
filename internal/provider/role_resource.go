@@ -2,12 +2,15 @@ package provider
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+
+	awsinternal "github.com/uptycslabs/terraform-provider-uptycscspm/internal/aws"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
@@ -18,11 +21,17 @@ var _ tfsdk.ResourceWithImportState = roleResource{}
 type roleResourceType struct{}
 
 func (t roleResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
+	_ = ctx
 	return tfsdk.Schema{
 		// This description is used by the documentation generator and the language server.
 		MarkdownDescription: "Role Group resource",
 
 		Attributes: map[string]tfsdk.Attribute{
+			"profile_name": {
+				MarkdownDescription: "Profile name",
+				Required:            true,
+				Type:                types.StringType,
+			},
 			"account_id": {
 				MarkdownDescription: "AWS account ID",
 				Required:            true,
@@ -53,6 +62,7 @@ func (t roleResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Dia
 }
 
 func (t roleResourceType) NewResource(ctx context.Context, in tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+	_ = ctx
 	provider, diags := convertProviderType(in)
 
 	return roleResource{
@@ -61,6 +71,7 @@ func (t roleResourceType) NewResource(ctx context.Context, in tfsdk.Provider) (t
 }
 
 type exampleResourceData struct {
+	ProfileName     types.String `tfsdk:"profile_name"`
 	AccountID       types.String `tfsdk:"account_id"`
 	IntegrationName types.String `tfsdk:"integration_name"`
 	UptAccountID    types.String `tfsdk:"upt_account_id"`
@@ -92,7 +103,16 @@ func (r roleResource) Create(ctx context.Context, req tfsdk.CreateResourceReques
 
 	// For the purposes of this example code, hardcoding a response value to
 	// save into the Terraform state.
-	role := "arn:aws:iam::" + data.AccountID.Value + ":role/" + data.IntegrationName.Value
+	svc, errSvc := awsinternal.GetAwsIamClient(ctx, data.ProfileName.Value, "aws-global", data.AccountID.Value)
+	if errSvc != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get client for %s with profile %s. err=%s", data.AccountID.Value, data.ProfileName.Value, errSvc.Error()))
+		return
+	}
+	role, errCreate := awsinternal.CreateUptycsCspmResources(ctx, svc, data.IntegrationName.Value, data.UptAccountID.Value, data.ExternalID.Value)
+	if errCreate != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create uptycscspm role. err=%s", errCreate))
+		return
+	}
 	data.Role = types.String{Value: role}
 
 	// write logs using the tflog package
@@ -121,6 +141,17 @@ func (r roleResource) Read(ctx context.Context, req tfsdk.ReadResourceRequest, r
 	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read example, got error: %s", err))
 	//     return
 	// }
+	svc, errSvc := awsinternal.GetAwsIamClient(ctx, data.ProfileName.Value, "aws-global", data.AccountID.Value)
+	if errSvc != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get client for %s with profile %s. err=%s", data.AccountID.Value, data.ProfileName.Value, errSvc.Error()))
+		return
+	}
+	role, errRole := awsinternal.GetIntegrationRoleName(ctx, svc, data.IntegrationName.Value)
+	if errRole != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create uptycscspm role. err=%s", errRole))
+		return
+	}
+	data.Role = types.String{Value: role}
 
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
@@ -143,8 +174,16 @@ func (r roleResource) Update(ctx context.Context, req tfsdk.UpdateResourceReques
 	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update example, got error: %s", err))
 	//     return
 	// }
-
-	role := "arn:aws:iam::" + data.AccountID.Value + ":role/" + data.IntegrationName.Value
+	svc, errSvc := awsinternal.GetAwsIamClient(ctx, data.ProfileName.Value, "aws-global", data.AccountID.Value)
+	if errSvc != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get client for %s with profile %s. err=%s", data.AccountID.Value, data.ProfileName.Value, errSvc.Error()))
+		return
+	}
+	role, errRole := awsinternal.GetIntegrationRoleName(ctx, svc, data.IntegrationName.Value)
+	if errRole != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create uptycscspm role. err=%s", errRole))
+		return
+	}
 	data.Role = types.String{Value: role}
 
 	diags = resp.State.Set(ctx, &data)
@@ -168,6 +207,16 @@ func (r roleResource) Delete(ctx context.Context, req tfsdk.DeleteResourceReques
 	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
 	//     return
 	// }
+	svc, errSvc := awsinternal.GetAwsIamClient(ctx, data.ProfileName.Value, "aws-global", data.AccountID.Value)
+	if errSvc != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get client for %s with profile %s. err=%s", data.AccountID.Value, data.ProfileName.Value, errSvc.Error()))
+		return
+	}
+	errDel := awsinternal.DeleteUptycsCspmResources(ctx, svc, data.IntegrationName.Value)
+	if errDel != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create uptycscspm role. err=%s", errDel))
+		return
+	}
 }
 
 func (r roleResource) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
