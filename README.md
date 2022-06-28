@@ -31,20 +31,21 @@ Then commit the changes to `go.mod` and `go.sum`.
 
 ## Using the provider
 
-Fill this in for each provider
+```
+terraform {
+  required_providers {
+    uptycscspm = {
+      source  = "github.com/uptycslabs/uptycscspm"
+      version = "0.0.1"
+    }
+  }
+}
 
-## Developing the Provider
-
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (see [Requirements](#requirements) above).
-
-To compile the provider, run `go install`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
-
-To generate or update documentation, run `go generate`.
-
-In order to run the full suite of Acceptance tests, run `make testacc`.
-
-*Note:* Acceptance tests create real resources, and often cost money to run.
-
-```shell
-make testacc
+resource "uptycscspm_role" "test" {
+  profile_name = "default"
+  account_id = "123456789012"
+  integration_name = "UptycsIntegration"
+  upt_account_id = "123456789013"
+  external_id = "6a9375c1-47c0-470c-9217-d2f9d2d185f1"
+}
 ```
