@@ -33,10 +33,11 @@ Then commit the changes to `go.mod` and `go.sum`.
 
 ```
 terraform {
+  required_version = ">= 0.12.21"
   required_providers {
     uptycscspm = {
       source  = "github.com/uptycslabs/uptycscspm"
-      version = "0.0.1"
+      version = ">= 0.0.2"
     }
   }
 }
