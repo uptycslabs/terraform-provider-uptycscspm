@@ -18,13 +18,13 @@ Role Group resource
 ### Required
 
 - `account_id` (String) AWS account ID
-- `external_id` (String) External ID
-- `integration_name` (String) Integration name
-- `profile_name` (String) Profile name
-- `upt_account_id` (String) Uptycs AWS account ID
 - `bucket_name` (String) Cloudtrail Bucket
 - `bucket_region` (String) Cloudtrail Bucket Region
+- `external_id` (String) External ID
+- `integration_name` (String) Integration name
 - `policy_document` (String) Uptycs ReadOnly Policy
+- `profile_name` (String) Profile name
+- `upt_account_id` (String) Uptycs AWS account ID
 
 ### Read-Only
 
