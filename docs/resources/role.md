@@ -22,6 +22,9 @@ Role Group resource
 - `integration_name` (String) Integration name
 - `profile_name` (String) Profile name
 - `upt_account_id` (String) Uptycs AWS account ID
+- `bucket_name` (String) Cloudtrail Bucket
+- `bucket_region` (String) Cloudtrail Bucket Region
+- `policy_document` (String) Uptycs ReadOnly Policy
 
 ### Read-Only
 
