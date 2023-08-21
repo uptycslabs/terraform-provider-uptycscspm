@@ -57,6 +57,21 @@ func (t roleResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Dia
 				Computed:            true,
 				Type:                types.StringType,
 			},
+			"bucket_name": {
+				MarkdownDescription: "Cloudtrail Bucket",
+				Required:            true,
+				Type:                types.StringType,
+			},
+			"bucket_region": {
+				MarkdownDescription: "Cloudtrail Bucket Region",
+				Required:            true,
+				Type:                types.StringType,
+			},
+			"policy_document": {
+				MarkdownDescription: "Uptycs ReadOnly Policy",
+				Required:            true,
+				Type:                types.StringType,
+			},
 		},
 	}, nil
 }
@@ -77,6 +92,9 @@ type exampleResourceData struct {
 	UptAccountID    types.String `tfsdk:"upt_account_id"`
 	ExternalID      types.String `tfsdk:"external_id"`
 	Role            types.String `tfsdk:"role"`
+	BucketName      types.String `tfsdk:"bucket_name"`
+	BucketRegion    types.String `tfsdk:"bucket_region"`
+	PolicyDocument  types.String `tfsdk:"policy_document"`
 }
 
 type roleResource struct {
@@ -108,7 +126,17 @@ func (r roleResource) Create(ctx context.Context, req tfsdk.CreateResourceReques
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get client for %s with profile %s. err=%s", data.AccountID.Value, data.ProfileName.Value, errSvc.Error()))
 		return
 	}
-	role, errCreate := awsinternal.CreateUptycsCspmResources(ctx, svc, data.IntegrationName.Value, data.UptAccountID.Value, data.ExternalID.Value)
+	role, errCreate := awsinternal.CreateUptycsCspmResources(ctx,
+		svc,
+		data.IntegrationName.Value,
+		data.UptAccountID.Value,
+		data.ExternalID.Value,
+		data.BucketName.Value,
+		data.BucketRegion.Value,
+		data.ProfileName.Value,
+		data.AccountID.Value,
+		data.PolicyDocument.Value,
+		false)
 	if errCreate != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create uptycscspm role. err=%s", errCreate))
 		return
@@ -179,13 +207,27 @@ func (r roleResource) Update(ctx context.Context, req tfsdk.UpdateResourceReques
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get client for %s with profile %s. err=%s", data.AccountID.Value, data.ProfileName.Value, errSvc.Error()))
 		return
 	}
-	role, errRole := awsinternal.GetIntegrationRoleName(ctx, svc, data.IntegrationName.Value)
-	if errRole != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create uptycscspm role. err=%s", errRole))
+	errDel := awsinternal.DeleteUptycsCspmResources(ctx, svc, data.IntegrationName.Value)
+	if errDel != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update uptycscspm role. err=%s", errDel))
+		return
+	}
+	role, errCreate := awsinternal.CreateUptycsCspmResources(ctx,
+		svc,
+		data.IntegrationName.Value,
+		data.UptAccountID.Value,
+		data.ExternalID.Value,
+		data.BucketName.Value,
+		data.BucketRegion.Value,
+		data.ProfileName.Value,
+		data.AccountID.Value,
+		data.PolicyDocument.Value,
+		true)
+	if errCreate != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to re-create uptycscspm role. err=%s", errCreate))
 		return
 	}
 	data.Role = types.String{Value: role}
-
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 }
