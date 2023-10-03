@@ -27,7 +27,8 @@ Role Group resource
 - `upt_account_id` (String) Uptycs AWS account ID
 
 ### Optional
-- `org_access_role_name` (String) Org account access IAM role name
+
+- `org_access_role_name` (String) Organization Account Access Role Name
 
 ### Read-Only
 
