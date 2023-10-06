@@ -17,7 +17,7 @@ func TestAccRoleResource(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccRoleResourceConfig("noprofile", "123456789012", "012345678912", "uptcloud", "6a9375c1-47c0-470c-9217-d2f9d2d185f1", "uptycs-test-bucket", "us-east-1", ""),
+				Config: testAccRoleResourceConfig("noprofile", "123456789012", "012345678912", "uptcloud", "6a9375c1-47c0-470c-9217-d2f9d2d185f1", "uptycs-test-bucket", "us-east-1", "", "OrganizationAccountAccessRole"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("uptycscspm_role.test", "profile_name", "noprofile"),
 					resource.TestCheckResourceAttr("uptycscspm_role.test", "account_id", "123456789012"),
@@ -28,6 +28,7 @@ func TestAccRoleResource(t *testing.T) {
 					resource.TestCheckResourceAttr("uptycscspm_role.test", "bucket_name", "uptycs-test-bucket"),
 					resource.TestCheckResourceAttr("uptycscspm_role.test", "bucket_region", "us-east-1"),
 					resource.TestCheckResourceAttr("uptycscspm_role.test", "policy_document", ""),
+					resource.TestCheckResourceAttr("uptycscspm_role.test", "org_access_role_name", "OrganizationAccountAccessRole"),
 				),
 				// Expect to fail as we cannot contact AWS with fake accounts
 				ExpectError: errRegex,
@@ -60,7 +61,7 @@ func TestAccRoleResource(t *testing.T) {
 	})
 }
 
-func testAccRoleResourceConfig(profile string, account string, uptAccount string, integration string, externalID string, bucketName string, bucketRegion string, policyDocument string) string {
+func testAccRoleResourceConfig(profile string, account string, uptAccount string, integration string, externalID string, bucketName string, bucketRegion string, policyDocument string, orgAccessRoleName string) string {
 	return fmt.Sprintf(`
 resource "uptycscspm_role" "test" {
   profile_name = %[1]q
@@ -71,7 +72,8 @@ resource "uptycscspm_role" "test" {
   bucket_name = %[6]q
   bucket_region = %[7]q
   policy_document = %[8]q
+  org_access_role_name = %[9]q
 
 }
-`, profile, account, uptAccount, integration, externalID, bucketName, bucketRegion, policyDocument)
+`, profile, account, uptAccount, integration, externalID, bucketName, bucketRegion, policyDocument, orgAccessRoleName)
 }

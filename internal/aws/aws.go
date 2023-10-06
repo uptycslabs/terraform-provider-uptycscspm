@@ -174,8 +174,11 @@ func detachPolicyToRole(ctx context.Context, svc *iam.Client, policyArn string, 
 	return nil
 }
 
-func GetAwsIamClient(ctx context.Context, profileName string, regionCode string, childAccountID string) (*iam.Client, error) {
+func GetAwsIamClient(ctx context.Context, profileName string, regionCode string, childAccountID string, roleToAssume string) (*iam.Client, error) {
 	roleArn := fmt.Sprintf("arn:aws:iam::%s:role/OrganizationAccountAccessRole", childAccountID)
+	if roleToAssume != "" {
+		roleArn = fmt.Sprintf("arn:aws:iam::%s:role/%s", childAccountID, roleToAssume)
+	}
 	sess, err := getAwsConfig(ctx, profileName, regionCode, roleArn)
 	if err != nil {
 		return nil, err
@@ -187,8 +190,11 @@ func GetAwsIamClient(ctx context.Context, profileName string, regionCode string,
 	return svc, nil
 }
 
-func getAwsS3Client(ctx context.Context, profileName string, regionCode string, childAccountID string) (*storage.Client, error) {
+func getAwsS3Client(ctx context.Context, profileName string, regionCode string, childAccountID string, roleToAssume string) (*storage.Client, error) {
 	roleArn := fmt.Sprintf("arn:aws:iam::%s:role/OrganizationAccountAccessRole", childAccountID)
+	if roleToAssume != "" {
+		roleArn = fmt.Sprintf("arn:aws:iam::%s:role/%s", childAccountID, roleToAssume)
+	}
 	sess, err := getAwsConfig(ctx, profileName, regionCode, roleArn)
 	if err != nil {
 		return nil, err
@@ -224,6 +230,7 @@ func CreateUptycsCspmResources(
 	profileName string,
 	accountId string,
 	policyDocument string,
+	roleToAssume string,
 	isUpdate bool,
 ) (string, error) {
 	roleArn := ""
@@ -296,7 +303,7 @@ func CreateUptycsCspmResources(
 
 	if bucketName != "" {
 		//get s3 client
-		s3Client, s3ClientErr := getAwsS3Client(ctx, profileName, bucketRegion, accountId)
+		s3Client, s3ClientErr := getAwsS3Client(ctx, profileName, bucketRegion, accountId, roleToAssume)
 		if s3ClientErr != nil {
 			if !isUpdate {
 				DeleteUptycsCspmResources(ctx, svc, integrationName)

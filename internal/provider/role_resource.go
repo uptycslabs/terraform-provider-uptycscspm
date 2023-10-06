@@ -72,6 +72,11 @@ func (t roleResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Dia
 				Required:            true,
 				Type:                types.StringType,
 			},
+			"org_access_role_name": {
+				MarkdownDescription: "Organization Account Access Role Name",
+				Optional:            true,
+				Type:                types.StringType,
+			},
 		},
 	}, nil
 }
@@ -86,15 +91,16 @@ func (t roleResourceType) NewResource(ctx context.Context, in tfsdk.Provider) (t
 }
 
 type exampleResourceData struct {
-	ProfileName     types.String `tfsdk:"profile_name"`
-	AccountID       types.String `tfsdk:"account_id"`
-	IntegrationName types.String `tfsdk:"integration_name"`
-	UptAccountID    types.String `tfsdk:"upt_account_id"`
-	ExternalID      types.String `tfsdk:"external_id"`
-	Role            types.String `tfsdk:"role"`
-	BucketName      types.String `tfsdk:"bucket_name"`
-	BucketRegion    types.String `tfsdk:"bucket_region"`
-	PolicyDocument  types.String `tfsdk:"policy_document"`
+	ProfileName       types.String `tfsdk:"profile_name"`
+	AccountID         types.String `tfsdk:"account_id"`
+	IntegrationName   types.String `tfsdk:"integration_name"`
+	UptAccountID      types.String `tfsdk:"upt_account_id"`
+	ExternalID        types.String `tfsdk:"external_id"`
+	Role              types.String `tfsdk:"role"`
+	BucketName        types.String `tfsdk:"bucket_name"`
+	BucketRegion      types.String `tfsdk:"bucket_region"`
+	PolicyDocument    types.String `tfsdk:"policy_document"`
+	OrgAccessRoleName types.String `tfsdk:"org_access_role_name"`
 }
 
 type roleResource struct {
@@ -121,7 +127,7 @@ func (r roleResource) Create(ctx context.Context, req tfsdk.CreateResourceReques
 
 	// For the purposes of this example code, hardcoding a response value to
 	// save into the Terraform state.
-	svc, errSvc := awsinternal.GetAwsIamClient(ctx, data.ProfileName.Value, "aws-global", data.AccountID.Value)
+	svc, errSvc := awsinternal.GetAwsIamClient(ctx, data.ProfileName.Value, "aws-global", data.AccountID.Value, data.OrgAccessRoleName.Value)
 	if errSvc != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get client for %s with profile %s. err=%s", data.AccountID.Value, data.ProfileName.Value, errSvc.Error()))
 		return
@@ -136,6 +142,7 @@ func (r roleResource) Create(ctx context.Context, req tfsdk.CreateResourceReques
 		data.ProfileName.Value,
 		data.AccountID.Value,
 		data.PolicyDocument.Value,
+		data.OrgAccessRoleName.Value,
 		false)
 	if errCreate != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create uptycscspm role. err=%s", errCreate))
@@ -169,7 +176,7 @@ func (r roleResource) Read(ctx context.Context, req tfsdk.ReadResourceRequest, r
 	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read example, got error: %s", err))
 	//     return
 	// }
-	svc, errSvc := awsinternal.GetAwsIamClient(ctx, data.ProfileName.Value, "aws-global", data.AccountID.Value)
+	svc, errSvc := awsinternal.GetAwsIamClient(ctx, data.ProfileName.Value, "aws-global", data.AccountID.Value, data.OrgAccessRoleName.Value)
 	if errSvc != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get client for %s with profile %s. err=%s", data.AccountID.Value, data.ProfileName.Value, errSvc.Error()))
 		return
@@ -202,7 +209,7 @@ func (r roleResource) Update(ctx context.Context, req tfsdk.UpdateResourceReques
 	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update example, got error: %s", err))
 	//     return
 	// }
-	svc, errSvc := awsinternal.GetAwsIamClient(ctx, data.ProfileName.Value, "aws-global", data.AccountID.Value)
+	svc, errSvc := awsinternal.GetAwsIamClient(ctx, data.ProfileName.Value, "aws-global", data.AccountID.Value, data.OrgAccessRoleName.Value)
 	if errSvc != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get client for %s with profile %s. err=%s", data.AccountID.Value, data.ProfileName.Value, errSvc.Error()))
 		return
@@ -222,6 +229,7 @@ func (r roleResource) Update(ctx context.Context, req tfsdk.UpdateResourceReques
 		data.ProfileName.Value,
 		data.AccountID.Value,
 		data.PolicyDocument.Value,
+		data.OrgAccessRoleName.Value,
 		true)
 	if errCreate != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to re-create uptycscspm role. err=%s", errCreate))
@@ -249,7 +257,7 @@ func (r roleResource) Delete(ctx context.Context, req tfsdk.DeleteResourceReques
 	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
 	//     return
 	// }
-	svc, errSvc := awsinternal.GetAwsIamClient(ctx, data.ProfileName.Value, "aws-global", data.AccountID.Value)
+	svc, errSvc := awsinternal.GetAwsIamClient(ctx, data.ProfileName.Value, "aws-global", data.AccountID.Value, data.OrgAccessRoleName.Value)
 	if errSvc != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get client for %s with profile %s. err=%s", data.AccountID.Value, data.ProfileName.Value, errSvc.Error()))
 		return
