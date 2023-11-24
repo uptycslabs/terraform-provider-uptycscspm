@@ -11,6 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	storage "github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
+
+	org "github.com/aws/aws-sdk-go-v2/service/organizations"
 )
 
 const ReadOnlyPolicyName = "UptycsReadOnlyPolicy"
@@ -402,4 +404,44 @@ func DeleteUptycsCspmResources(ctx context.Context, svc *iam.Client, integration
 	}
 	return nil
 
+}
+
+func getAwsConfigForOrg(ctx context.Context, profileName string) (*aws.Config, error) {
+
+	cfg, err := config.LoadDefaultConfig(ctx,
+		config.WithSharedConfigProfile(profileName),
+		// config.WithRegion(region),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	return &cfg, nil
+}
+
+func GetOrgClient(ctx context.Context, profileName string) (*org.Client, error) {
+	sess, err := getAwsConfigForOrg(ctx, profileName)
+	if err != nil {
+		return nil, err
+	}
+	svc := org.NewFromConfig(*sess)
+	if svc == nil {
+		return nil, fmt.Errorf("failed to create org client with profile=%s, region=%s", profileName, "us-east-1")
+	}
+	return svc, nil
+}
+
+func IsAccountExistsInOrg(ctx context.Context, svc *org.Client, accountId string) (bool, error) {
+	op, err := svc.ListAccounts(ctx, &org.ListAccountsInput{})
+	if err != nil {
+		return false, err
+	}
+	if op != nil {
+		for _, account := range op.Accounts {
+			if accountId == *account.Id && account.Status == "ACTIVE" {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }

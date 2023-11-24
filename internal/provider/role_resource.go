@@ -176,6 +176,24 @@ func (r roleResource) Read(ctx context.Context, req tfsdk.ReadResourceRequest, r
 	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read example, got error: %s", err))
 	//     return
 	// }
+
+	orgSvc, orgErrSvc := awsinternal.GetOrgClient(ctx, data.ProfileName.Value)
+	if orgErrSvc != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get org client with profile %s. err=%s", data.ProfileName.Value, orgErrSvc.Error()))
+		return
+	}
+
+	accountExists, err := awsinternal.IsAccountExistsInOrg(ctx, orgSvc, data.AccountID.Value)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get account list from organization. err=%s", orgErrSvc.Error()))
+		return
+	}
+
+	if !accountExists {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
 	svc, errSvc := awsinternal.GetAwsIamClient(ctx, data.ProfileName.Value, "aws-global", data.AccountID.Value, data.OrgAccessRoleName.Value)
 	if errSvc != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get client for %s with profile %s. err=%s", data.AccountID.Value, data.ProfileName.Value, errSvc.Error()))
@@ -183,7 +201,7 @@ func (r roleResource) Read(ctx context.Context, req tfsdk.ReadResourceRequest, r
 	}
 	role, errRole := awsinternal.GetIntegrationRoleName(ctx, svc, data.IntegrationName.Value)
 	if errRole != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create uptycscspm role. err=%s", errRole))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get uptycscspm role. err=%s", errRole))
 		return
 	}
 	data.Role = types.String{Value: role}
